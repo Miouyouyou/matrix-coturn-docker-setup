@@ -1,0 +1,67 @@
+version: '3.4'
+
+services:
+  postgresql:
+    image: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file:
+      - ./env/postgres.env
+    restart: always
+    networks:
+      matrix_network:
+        aliases:
+          - postgresql
+        ipv4_address: 172.50.4.3
+
+  coturn:
+    build:
+      context: ./build/coturn
+      network: host
+    image: myy/coturn:latest
+    restart: always
+    volumes:
+      - ./data/coturn/turnserver.conf:/etc/turnserver.conf:ro
+      # If you plan to use SSL with STUN, uncomment those two lines
+      # And then edit data/coturn/turnserver.conf TOO !
+      #- ./data/ssl/privkey.pem:/etc/ssl/private/privkey.pem:ro
+      #- ./data/ssl/cert.pem:/etc/ssl/certs/cert.pem:ro
+      - ./data/coturn/db:/usr/local/var/db/
+    networks:
+      matrix_network:
+        ipv4_address: 172.50.4.20
+        ipv6_address: fc00::115
+
+  matrix:
+    image: myy/synapse:latest-intel
+    build:
+      context: ./build/synapse
+      network: host
+    volumes:
+      - ./data/matrix:/data
+    networks:
+      matrix_network:
+        ipv4_address: 172.50.4.2
+        ipv6_address: fc00::110
+    depends_on:
+      - postgresql # For the data
+      - coturn     # For the VOIP
+    restart: always
+
+volumes:
+  pgdata:
+
+networks:
+  frontend:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.50.3.0/24"
+        - subnet: "fc00::100/124"
+
+  matrix_network:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.50.4.0/24"
+        - subnet: "fc00::110/124" 
