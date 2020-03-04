@@ -227,12 +227,13 @@ function synapse_start() {
 		-m synapse.app.homeserver \
 		--config-path="$CONFIGURATION_FILEPATH.sample" \
 		--config-path="$CONFIGURATION_SPLITDIR" \
-		--data-dir="$DATA_DIR"
+		--data-dir="$DATA_DIR" \
+		$@
 }
 
 synapse_is_configured || synapse_configure
 
-if [ $? -eq 0 ]; then synapse_start; fi
+if [ $? -eq 0 ]; then synapse_start $@; fi
 
 # a.generate_config("/", "/", "miou", generate_secrets=True, database_conf=db_conf)
 # python -m synapse.app.homeserver --config-path=/etc/matrix-synapse/homeserver.yaml --config-path=/etc/matrix-synapse/conf.d/ --generate-config
