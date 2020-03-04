@@ -38,7 +38,21 @@ services:
       context: ./build/synapse
       network: host
     volumes:
-      - ./data/matrix:/data
+      - ./matrix/conf:/etc/synapse
+      - ./matrix/data:/data
+    env_file:
+      - ./env/postgres.env # Reuse the PostgreSQL configuration
+    environment:
+      - SYNAPSE_SERVER_NAME=NameOfYourMatrixServer
+      - SYNAPSE_SERVER_ADDRESS=https://matrix.yourdomain.com
+      - SYNAPSE_REPORT_STATS=yes # Can be set to "no"
+      - SYNAPSE_DATABASE_BACKEND=postgresql # The backend name : postgresql or sqlite
+      - SYNAPSE_POSTGRES_DBADDR=postgresql # The network alias we provided to our postgresql server
+      # PostgreSQL configuration is inherited from the postgres.env env_file
+      - SYNAPSE_VOIP_TURN_MAIN_URL=turn:turn.yourdomain.com:3478?transport=udp
+      - SYNAPSE_VOIP_TURN_USERNAME=turn_username
+      - SYNAPSE_VOIP_TURN_PASSWORD=turn_password
+
     networks:
       matrix_network:
         ipv4_address: 172.50.4.2
