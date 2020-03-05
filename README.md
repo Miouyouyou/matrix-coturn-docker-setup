@@ -47,19 +47,13 @@ _turns._tcp  IN SRV  0 0 5349 turn.example.com.
 
 ### COTURN
 
-Empty the database file and let COTURN regenerate it :
-
-```bash
-> data/coturn/db/turndb
-```
-
 * Setup a login/password combination for your TURN/STUN server.
 
 ```bash
 TURN_USERNAME=username
 TURN_PASSWORD=password
 TURN_REALM=turn_domain_name # It's actually just a string to differentiate configurations
-docker-compose run coturn turnadmin -a -b "/usr/local/var/db/turndb" -u TURN_USERNAME -p TURN_PASSWORD -r TURN_DOMAINNAME
+docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u $TURN_USERNAME -p $TURN_PASSWORD -r $TURN_DOMAINNAME
 ```
 
 ### Matrix
