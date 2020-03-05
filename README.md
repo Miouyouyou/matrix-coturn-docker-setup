@@ -2,9 +2,6 @@
 
 This repository contains files to "quickly" setup a Matrix
 Synapse server.  
-It's not a push-button though, since Synapse configuration
-is kind of a pain to setup... But in 3 commands you should
-be ready to go !
 
 Note that more complex setups can be done using
 [Ansible](https://github.com/atb00ker/ansible-matrix-synapse)
@@ -47,14 +44,7 @@ _turns._tcp  IN SRV  0 0 5349 turn.example.com.
 
 ### COTURN
 
-* Setup a login/password combination for your TURN/STUN server.
-
-```bash
-TURN_USERNAME=username
-TURN_PASSWORD=password
-TURN_REALM=turn_domain_name # It's actually just a string to differentiate configurations
-docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u $TURN_USERNAME -p $TURN_PASSWORD -r $TURN_DOMAINNAME
-```
+* If you want to use SSL or NAT, have a look at **coturn/conf/turnserver.conf**
 
 ### Matrix
 
@@ -69,16 +59,11 @@ docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u $TURN_USERNAME
       - SYNAPSE_POSTGRES_DBADDR=postgresql # The network alias we provided to our postgresql server
       # PostgreSQL configuration is inherited from the postgres.env env_file
       - SYNAPSE_VOIP_TURN_MAIN_URL=turn:turn.yourdomain.com:3478?transport=udp
+      # Can be empty ( SYNAPSE_VOIP_TURN_USERNAME= )
       - SYNAPSE_VOIP_TURN_USERNAME=turn_username
+      # Can be empty if your SYNAPSE_VOIP_TURN_USERNAME is set to an empty string
       - SYNAPSE_VOIP_TURN_PASSWORD=turn_password
 ```
-
-**TODO : Rename `SYNAPSE_VOIP_TURN_USERNAME` to `TURN_USERNAME`**
-**and `SYNAPSE_VOIP_TURN_PASSWORD` to `TURN_PASSWORD`**
-
-**TODO : Define these informations in an env file and reuse the**
-**same username and password definitions in both COTURN and**
-**Synapse.**
 
 ## Run it
 
@@ -87,6 +72,30 @@ docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u $TURN_USERNAME
 ```bash
 docker-compose up -d
 ```
+
+### Add users
+
+#### To your TURN server
+
+TURN is used to force users wanting to do direct VOIP to punch
+a hole through their firewalls, and setup their NAT correctly.
+This remove the complexity of VOIP communications, without
+requiring a middleman server (who could record the entire
+session).
+
+If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
+the matrix configuration part, you should the user right now
+(else CoTURN will reject the authentication request).
+
+```bash
+docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u turn_username -p turn_password -r turn.yourdomain.com
+```
+
+#### To your Synapse server
+
+TODO
+
+### View the logs
 
 You can then use `docker-compose logs` to get the logs of every
 units at once, or :
