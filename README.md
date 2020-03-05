@@ -77,19 +77,20 @@ docker-compose up -d
 
 #### To your TURN server
 
-TURN is used to force users wanting to do direct VOIP to punch
-a hole through their firewalls, and setup their NAT correctly.
+```bash
+docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u turn_username -p turn_password -r turn.yourdomain.com
+```
+
+TURN is used to help the users wanting to do direct VOIP
+configure their firewalls, and NAT setup.  
 This remove the complexity of VOIP communications, without
 requiring a middleman server (who could record the entire
 session).
 
-If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
-the matrix configuration part, you should the user right now
-(else CoTURN will reject the authentication request).
-
-```bash
-docker-compose run coturn turnadmin -a -b "/srv/coturn/turndb" -u turn_username -p turn_password -r turn.yourdomain.com
-```
+> If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
+> the matrix configuration part, the user should be added ASAP,
+> else CoTURN will reject the authentication request and fail the
+> VOIP setup.
 
 #### To your Synapse server
 
