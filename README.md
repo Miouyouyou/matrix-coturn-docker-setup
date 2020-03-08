@@ -61,15 +61,17 @@ docker-compose run -p 80:80 -d nginx # Run only NGINX on port 80 for ACME challe
 **For Matrix**
 
 ```bash
-docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d matrix.yourdomain.com
-cp -rL letsencrypt/live/matrix.yourdomain.com ssl/
+export SSL_DOMAIN=matrix.yourdomain.com
+docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
+cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
 ```
 
 **For TURN**
 
 ```bash
-docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d matrix.yourdomain.com
-cp -rL letsencrypt/live/turn.yourdomain.com ssl/
+export SSL_DOMAIN=turn.yourdomain.com
+docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
+cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
 ```
 
 ##### Shutdown NGINX
