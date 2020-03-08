@@ -20,14 +20,18 @@ To do that you can use the method described below.
 
 #### Conventions used in this document
 
+##### Folders
+
 `docker-compose.yml` is currently configured to use
-`ssl/matrix.yourdomain.com/...` for SSL files related to your Matrix
-domain and `ssl/turn.yourdomain.com/...` for SSL files related to
+**ssl/matrix.yourdomain.com/...** for SSL files related to your Matrix
+domain and **ssl/turn.yourdomain.com/...** for SSL files related to
 your TURN domain.  
-The **Steps** follows this logic.
+The **Checklist** follows this logic.
 
 If you use the same SSL certificates for both TURN and Matrix domains,
 replace these references accordingly in `docker-compose.yml`.
+
+##### Files
 
 * `fullchain.pem` is a certificate containing the whole chain
 of trust.
@@ -82,7 +86,7 @@ method :
 * [ ] Create the folder **ssl/matrix.mynewchat.com/**
 * [ ] Copy SSL certificates for `matrix.mynewchat.com` to
       **ssl/matrix.mynewchat.com/**
-* [ ] Create the folder `ssl/turn.mynewchat.com/`
+* [ ] Create the folder **ssl/turn.mynewchat.com/**
 * [ ] Copy SSL certificates for `turn.mynewchat.com` to
       **ssl/turn.mynewchat.com**
 
@@ -97,7 +101,8 @@ cd -
 > If you don't do this now, when starting HAProxy through
 > docker-compose, a folder **ssl/matrix.yourdomain.com/complete.pem**
 > will be created automatically by Docker.  
-> In such case, remove the folder, then `cat` the files.
+> In such case, remove the **ssl/matrix.yourdomain.com/complete.pem**
+> folder, then `cat` the files.
 
 ### DNS
 
@@ -191,8 +196,8 @@ session).
 
 > If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
 > the matrix configuration part, the user should be added ASAP,
-> else CoTURN will reject the authentication request and fail the
-> VOIP setup.
+> else CoTURN will reject the authentication request and fail
+> VOIP setups.
 
 ## View the logs
 
@@ -219,7 +224,7 @@ docker-compose down
 If you generated the Let's Encrypt SSL certificates using the method
 described in this document, here's how you can renew your certificates.
 
-While the docker-compose services running :
+Execute the following comands while docker-compose is `up` :
 
 ```bash
 docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest renew
@@ -258,10 +263,11 @@ directly.
 In this setup, COTURN uses the host network in order to avoid dealing
 with Docker "port-ranges" mapping.
 
-> Turns out that if you ask Docker for NAT ports between 49000 and 65535
-> to your container, Docker will setup one iptables rule PER PORT !  
+> Turns out that if you ask Docker to NAT ports between 49000 and 65535
+> to your container, Docker will setup **one `iptables` rule PER PORT** !  
 > So if you want to map ports using the 'ports' directive, you'll have
-> to wait patiently for Docker to setup roughly 16000 iptables rules !
+> to wait patiently for Docker to setup roughly 16000 `iptables` rules !  
+> Using the Docker host avoid [this issue](https://success.docker.com/article/docker-compose-and-docker-run-hang-when-binding-a-large-port-range).
 
 ### Configuration
 
