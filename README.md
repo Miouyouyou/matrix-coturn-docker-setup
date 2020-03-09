@@ -132,6 +132,7 @@ _turns._tcp  IN SRV  0 0 5349 turn.example.com.
 ### Final checklist (once you got the SSL certificates)
 
 Let's say that :
+
 * your new domain name for your Matrix server is
   `matrix.mynewchat.com`
 * your new domain name for your TURN server is
@@ -158,8 +159,7 @@ Let's say that :
 * [ ] In **coturn/conf/turnserver.conf** uncomment the following
       lines by removing the first `#` character :
   * [ ] `#cert=/etc/ssl/fullchain.pem`
-  * [ ] `#pkey=/etc/ssl/key.pem`
-
+  * [ ] `#pkey=/etc/ssl/privkey.pem`
 * [ ] In **docker-compose.yml** edit the following properties,
       based on your preferences, by modifying the part after
       the '='. Avoid using quotes in the environment variables :
