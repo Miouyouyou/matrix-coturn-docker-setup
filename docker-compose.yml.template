@@ -49,8 +49,8 @@ services:
       # You could use "docker secrets" instead
       # Be sure to edit ./coturn/conf/turnserver.conf afterwards if
       # you use "docker secrets" or change these paths
-      - ./ssl/turn.yourdomain.com/fullchain.pem:/etc/ssl/fullchain.pem:ro
-      - ./ssl/turn.yourdomain.com/privkey.pem:/etc/ssl/privkey.pem:ro
+      - ./ssl/${turn_domain}/fullchain.pem:/etc/ssl/fullchain.pem:ro
+      - ./ssl/${turn_domain}/privkey.pem:/etc/ssl/privkey.pem:ro
     network_mode: host
 
   synapse:
@@ -63,16 +63,16 @@ services:
     env_file:
       - "./env/postgres.env" # Reuse the PostgreSQL configuration
     environment:
-      - SYNAPSE_SERVER_NAME=YourMatrixServerName
-      - SYNAPSE_SERVER_ADDRESS=https://matrix.yourdomain.com
+      - SYNAPSE_SERVER_NAME=${synapse_servername}
+      - SYNAPSE_SERVER_ADDRESS=https://${matrix_domain}
       - SYNAPSE_REPORT_STATS=yes # Can be set to "no"
       - SYNAPSE_DATABASE_BACKEND=postgresql # The backend name : postgresql or sqlite
       - SYNAPSE_POSTGRES_DBADDR=postgresql # The network alias we provided to our postgresql server
       # PostgreSQL configuration is inherited from the postgres.env env_file
       # TURN Servers must have URL reachable from the outside
-      - SYNAPSE_VOIP_TURN_MAIN_URL=stun:turn.yourdomain.com:5349?transport=udp
-      - SYNAPSE_VOIP_TURN_USERNAME=turn_username
-      - SYNAPSE_VOIP_TURN_PASSWORD=turn_password
+      - SYNAPSE_VOIP_TURN_MAIN_URL=stun:${turn_domain}:5349
+      - SYNAPSE_VOIP_TURN_USERNAME=${turn_username}
+      - SYNAPSE_VOIP_TURN_PASSWORD=${turn_password}
     depends_on:
       - postgresql # For the data
       - coturn     # For the VOIP

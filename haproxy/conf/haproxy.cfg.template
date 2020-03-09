@@ -1,0 +1,89 @@
+global
+        daemon
+        # If you're becoming very popular, you might have to up the limit.
+        maxconn 1024
+        
+        # Log to /dev/log, which is then redirected to Docker's log output
+        log /dev/log    local0
+        
+        # SSL parameters. Basically, only use known good SSL configurations
+        tune.ssl.default-dh-param 4096
+        ssl-default-bind-options no-tls-tickets
+        ssl-default-bind-ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK:!DSS:!SRP:!LOW
+
+defaults
+        # HAProxy have two main modes : TCP and HTTP
+        # If you want to do URL filtering, use HTTP
+        # TCP doesn't know anything about 'URL'
+        mode http
+        # Kick terrible clients, avoiding some Slowloris-like
+        # attacks, where an attacker opens new connections
+        # and never closes them until your server is out
+        # of ressources.
+        timeout connect 10s
+        timeout client 20s
+        timeout server 20s
+        timeout tarpit 1m
+        log    global
+
+frontend entrypoint
+
+        # Bind on ports 80 and 443 (SSL)
+        bind haproxy:80
+        bind haproxy:443 ssl crt /etc/ssl/complete.pem ssl-min-ver TLSv1.0 ssl-max-ver TLSv1.3 alpn h2,http/1.1
+        mode http
+        option httplog
+
+        # Most attacker bots will get your IP by scanning EVERY
+        # IP under the sun, checking that port 80 or 443 is open
+        # and then testing multiple security holes (in PHP
+        # scripts generally).
+        # No sane individual will try to contact your server using
+        # your IP directly. They'll use your domain name
+        # (yourdomain.com here).
+        # So we ban EVERY client that doesn't try to contact your
+        # server using your domain name.
+        # A lot of matrix clients are stupid enough to contact your
+        # IP directly (ugh), so we only put this check here.
+        acl valid_domains hdr_dom(Host) -i ${matrix_domain}
+        http-request deny if !valid_domains
+
+        # If someone ask for yourdomain.com/_matrix , redirect him
+        # to the matrix webserver !
+        acl matrix-path path_beg /_matrix
+        use_backend matrix if matrix-path
+
+        # Else redirect him to the static Nginx server
+        default_backend nginxstatic
+
+backend nginxstatic
+        mode http
+        balance roundrobin
+
+        # Unless you're hosting a web application (PHP blog, ...),
+        # valid requests to your webserver should only be
+        # GET, OPTION and HEAD.
+        # GET is used to get webpages.
+        # OPTION is mostly used for Cross-scripting security checks
+        # HEAD can be used by some browsers to check for dead links
+        # before-hand.
+        # Other methods are not useful for standard HTML pages and
+        # small scripts.
+        # Remove this check if you use a complex application
+        acl valid_method  method GET OPTION HEAD
+        acl have_payload  hdr_val(content-length) gt 0
+        acl php_file      path_end .php
+        http-request deny if !valid_method OR have_payload OR php_file
+
+        http-response set-header Strict-Transport-Security "max-age=16000000; includeSubDomains; preload;"
+        server web01 nginx:80 check
+
+# The front-end managing SSL federation communications
+# Listening on port 8448
+frontend matrix-federation
+        # Use /run/secrets/your_matrix_domain.pem if you're using Docker secrets
+        bind haproxy:8448 ssl crt /etc/ssl/complete.pem ssl-min-ver TLSv1.0 ssl-max-ver TLSv1.3 alpn h2,http/1.1
+        default_backend matrix
+
+backend matrix
+        server matrix synapse:8008

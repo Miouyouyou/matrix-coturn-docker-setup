@@ -11,4 +11,5 @@
 .qt*
 
 matrix/
-
+ssl/
+template.sed

@@ -13,7 +13,7 @@ fingerprint
 lt-cred-mech
 
 # Replace 'turn.example.com' by your TURN domain name
-realm=turn.yourdomain.com
+realm=${turn_domain}
 
 userdb=/srv/coturn/turndb
 
