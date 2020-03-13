@@ -1,5 +1,6 @@
 #!/bin/bash
 
+CERTBOT_FILEPATH="./tools/certbot.sh"
 
 join_by() {
 	separator=$1
@@ -20,15 +21,27 @@ letsencrypt_generate_certificates() {
 	shift
 	main_domain=$1
 	certbot_domain_args="$(join_by " -d " $@)"
-	./certbot.sh "certonly --dry-run --agree-tos --email $email_address --webroot -w /var/lib/letsencrypt -d  $certbot_domain_args" &&
-	cp -rL "letsencrypt/live/$main_domain" ssl/
+	$CERTBOT_FILEPATH "certonly --agree-tos --email $email_address --webroot -w /var/lib/letsencrypt -d  $certbot_domain_args" &&
+	cp -rL "letsencrypt/live/$main_domain" ssl/ &&
+	# Note : the only purpose of this part is to make
+	# docker-generate.sh script run correctly, since
+	# this script check that SSL certificates are available
+	# for the MATRIX domain and the TURN domain...
+	shift &&
+	for sub_domain in $@;
+	do
+		# ln -s can be quite unreliable
+		# And symbolic links TOO can be unreliable in containers
+		# Just copy them. This should only waste a few kilo-bytes at
+		# worst.
+		cp -rL "ssl/$main_domain" ssl/$sub_domain
+	done
 }
 
 docker_stop_nginx() {
-	echo "Stowping"
+	echo "Making sure that every started Docker service is stopped..."
 	docker-compose down
 }
-
 
 bail_out() {
 	exit_status=$1
@@ -40,10 +53,9 @@ print_usage() {
 	echo "./letsencrypt_generate.sh contact@mail.com domain.com [another.domain.com ...]"
 }
 
-
-if [ ! -f ./certbot.sh ];
+if [ ! -f $CERTBOT_FILEPATH ];
 then
-	echo "The certbot wrapper ./certbot.sh is missing :C"
+	echo "Cannot find the certbot script at $CERTBOT_FILEPATH :C"
 	bail_out 3
 fi
 

@@ -63,7 +63,7 @@ services:
     env_file:
       - "./env/postgres.env" # Reuse the PostgreSQL configuration
     environment:
-      - SYNAPSE_SERVER_NAME=${synapse_servername}
+      - SYNAPSE_SERVER_NAME=${matrix_domain}
       - SYNAPSE_SERVER_ADDRESS=https://${matrix_domain}
       - SYNAPSE_REPORT_STATS=yes # Can be set to "no"
       - SYNAPSE_DATABASE_BACKEND=postgresql # The backend name : postgresql or sqlite
@@ -82,7 +82,7 @@ services:
     image: haproxy:latest
     volumes:
       - "./haproxy/conf:/usr/local/etc/haproxy:ro"
-      - "./ssl/matrix.yourdomain.com/complete.pem:/etc/ssl/complete.pem:ro"
+      - "./ssl/${matrix_domain}/complete.pem:/etc/ssl/complete.pem:ro"
       # Redirecting HAProxy logs can be troublesome
       # The container /dev/log to host /dev/log does
       # the trick, though.

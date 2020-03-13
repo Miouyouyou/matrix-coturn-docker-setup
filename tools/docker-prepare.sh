@@ -77,15 +77,13 @@ complete_pem_generate() {
 template_generate_sed_file() {
 	matrix_domain="$1"
 	turn_domain="$2"
-	synapse_server_name="$3"
-	postgresql_password="$4"
-	turn_username="$5"
-	turn_password="$6"
+	postgresql_password="$3"
+	turn_username="$4"
+	turn_password="$5"
 
 	cat << EOF > "$TEMPLATE_SED_FILEPATH"
 s/\${matrix_domain}/$matrix_domain/g
 s/\${turn_domain}/$turn_domain/g
-s/\${synapse_servername}/$synapse_server_name/g
 s/\${postgresql_password}/$postgresql_password/g
 s/\${turn_username}/$turn_username/g
 s/\${turn_password}/$turn_password/g
@@ -137,8 +135,9 @@ template_generate_files() {
 coturn_generate_add_missing_user_script() {
 	cat << EOF > $TURN_ADD_MISSING_USER_FILEPATH
 #!/bin/bash
-echo "If a Docker error occurs, be sure to run this script with"
-echo "the right privileges"
+echo "If a Docker error occurs, make sure to run this script with"
+echo "appropriate privileges, and that the services are up"
+echo "(docker-compose up -d)"
 echo ""
 docker exec coturn turnadmin -a -b "/srv/coturn/turndb" -u "$turn_username" -p "$turn_password" -r "$turn_domain"
 EOF
@@ -154,9 +153,9 @@ EOF
 	if [ $? -ne 0 ];
 	then
 		echo ""
-		echo "OR simply run : sh ./$TURN_ADD_MISSING_USER_FILEPATH"
+		echo "  OR simply run : sh ./$TURN_ADD_MISSING_USER_FILEPATH"
 	else
-		echo "OR simply run : ./$TURN_ADD_MISSING_USER_FILEPATH"
+		echo "  OR simply run : ./$TURN_ADD_MISSING_USER_FILEPATH"
 	fi
 
 }
@@ -168,14 +167,15 @@ coturn_advise_to_add_user() {
 	echo ""
 	echo "● The TURN credentials have been written in "
 	echo "- synapse/conf/homeserver.d/voip.yaml"
-	echo "● Remember to add the TURN user in COTURN by running :"
+	echo "● Once the services up and running (docker-compose up -d)"
+	echo "  Remember to add the TURN user in COTURN by running :"
 	echo "docker exec coturn turnadmin -a -b \"/srv/coturn/turndb\" -u \"$turn_username\" -p \"$turn_password\" -r \"$turn_domain\""
 
 
 }
 
 print_usage() {
-	echo "./automate.sh your.matrix.domain.com your.turn.domain.com MatrixServerName"
+	echo "./automate.sh your.matrix.domain.com your.turn.domain.com"
 	echo ""
 	echo "Notes"
 	echo "-----"
@@ -196,7 +196,7 @@ print_usage() {
 	echo "Only the parts of the templates with \$\{ \} will be modified"
 }
 
-if [ "$#" -lt 3 ];
+if [ "$#" -lt 2 ];
 then
 	echo "Not enough arguments"
 	print_usage
@@ -205,7 +205,6 @@ fi
 
 MATRIX_DOMAIN="$1"
 TURN_DOMAIN="$2"
-SYNAPSE_SERVER_NAME="$3"
 
 # We don't check for strings with only spaces
 # If the user REALLY want to fuck up his configuration
@@ -237,7 +236,6 @@ fi
 
 echo "● Using the following setup:"
 echo "- MATRIX_DOMAIN       : $MATRIX_DOMAIN"
-echo "- SYNAPSE_SERVER_NAME : $SYNAPSE_SERVER_NAME"
 echo "- TURN_DOMAIN         : $TURN_DOMAIN"
 echo "- TURN_USERNAME       : $TURN_USERNAME"
 echo "- TURN_PASSWORD       : $TURN_PASSWORD"
@@ -245,7 +243,7 @@ echo "- POSTGRESQL_PASSWORD : $POSTGRESQL_PASSWORD"
 echo ""
 
 template_generate_sed_file "$MATRIX_DOMAIN" "$TURN_DOMAIN" \
-  "$SYNAPSE_SERVER_NAME" "$POSTGRESQL_PASSWORD" \
+  "$POSTGRESQL_PASSWORD" \
   "$TURN_USERNAME" "$TURN_PASSWORD" &&
 
 check_ssl_files_for "$MATRIX_DOMAIN" &&
@@ -262,6 +260,7 @@ env/postgres.env
 haproxy/conf/haproxy.cfg
 nginx/conf/nginx.conf
 static/.well-known/matrix/server
+static/config.json
 "
 
 template_check_for_files "$FILES_TO_GENERATE" &&
