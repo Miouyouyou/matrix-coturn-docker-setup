@@ -139,7 +139,7 @@ echo "If a Docker error occurs, make sure to run this script with"
 echo "appropriate privileges, and that the services are up"
 echo "(docker-compose up -d)"
 echo ""
-docker exec coturn turnadmin -a -b "/srv/coturn/turndb" -u "$turn_username" -p "$turn_password" -r "$turn_domain"
+docker-compose exec coturn turnadmin -a -b "/srv/coturn/turndb" -u "$turn_username" -p "$turn_password" -r "$turn_domain"
 EOF
 	if [ $? -ne 0 ];
 	then
@@ -169,7 +169,7 @@ coturn_advise_to_add_user() {
 	echo "- synapse/conf/homeserver.d/voip.yaml"
 	echo "● Once the services up and running (docker-compose up -d)"
 	echo "  Remember to add the TURN user in COTURN by running :"
-	echo "docker exec coturn turnadmin -a -b \"/srv/coturn/turndb\" -u \"$turn_username\" -p \"$turn_password\" -r \"$turn_domain\""
+	echo "docker-compose exec coturn turnadmin -a -b \"/srv/coturn/turndb\" -u \"$turn_username\" -p \"$turn_password\" -r \"$turn_domain\""
 
 
 }

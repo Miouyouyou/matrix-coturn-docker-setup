@@ -6,109 +6,13 @@ Synapse server.
 Note that more complex setups can be done using
 [Ansible](https://github.com/atb00ker/ansible-matrix-synapse)
 
-# Usage
+# DNS configuration
 
-## First configuration
+* Prepare two domain names for your Matrix (Synapse) server and
+  TURN (CoTURN) server.
 
-Quite a long-ride for a "quick" setup...
-
-### SSL 
-
-If you don't have SSL certificates, generate free Let's Encrypt SSL
-certificates before hand.  
-To do that you can use the method described below.
-
-#### Conventions used in this document
-
-##### Folders
-
-`docker-compose.yml` is currently configured to use
-**ssl/matrix.yourdomain.com/...** for SSL files related to your Matrix
-domain and **ssl/turn.yourdomain.com/...** for SSL files related to
-your TURN domain.  
-The **Checklist** follows this logic.
-
-If you use the same SSL certificates for both TURN and Matrix domains,
-replace these references accordingly in `docker-compose.yml`.
-
-##### Files
-
-* `fullchain.pem` is a certificate containing the whole chain
-of trust.
-* `key.pem` is the private key associated with your certificate.  
-* `complete.pem` is the concatenation of `fullchain.pem` and
-`key.pem`
-
-> If you change any of these filenames, remember to change them
-> in the various configuration files.
-
-#### Generate SSL certificates with Let's Encrypt
-
-##### Prepare ssl/ and start NGINX for ACME challenges
-
-> This is the only time we map NGINX directly to port 80.
-> In the current setup, HAProxy is mapped to port 80 and
-> handle HTTP connections.
-
-```bash
-docker-compose down # Shut down all services for the moment
-mkdir -p ssl # Be sure that ssl/ exist
-docker-compose run -p 80:80 -d nginx # Run only NGINX on port 80 for ACME challenges
-```
-
-##### Generate the certificates the first time
-
-**For Matrix**
-
-```bash
-export SSL_DOMAIN=matrix.yourdomain.com
-docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
-cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
-```
-
-**For TURN**
-
-```bash
-export SSL_DOMAIN=turn.yourdomain.com
-docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
-cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
-```
-
-##### Shutdown NGINX
-
-```bash
-docker-compose down
-```
-
-#### If you have your own SSL certificates
-
-If you generated SSL certificates yourself, using another
-method :
-
-* [ ] Create the folder **ssl/matrix.mynewchat.com/**
-* [ ] Copy SSL certificates for `matrix.mynewchat.com` to
-      **ssl/matrix.mynewchat.com/**
-* [ ] Create the folder **ssl/turn.mynewchat.com/**
-* [ ] Copy SSL certificates for `turn.mynewchat.com` to
-      **ssl/turn.mynewchat.com**
-
-#### In both cases, generate `complete.pem` for HAProxy
-
-```
-cd ssl/matrix.yourdomain.com
-cat fullchain.pem privkey.pem > complete.pem
-cd -
-```
-
-> If you don't do this now, when starting HAProxy through
-> docker-compose, a folder **ssl/matrix.yourdomain.com/complete.pem**
-> will be created automatically by Docker.  
-> In such case, remove the **ssl/matrix.yourdomain.com/complete.pem**
-> folder, then `cat` the files.
-
-### DNS
-
-* Prepare the following DNS entries for your domain
+Your matrix server will offer Chat services, and the TURN server
+will allow you to use Webconferences through your Chat with ease.
 
 ```dns
 _matrix._tcp IN SRV  10 5 8448 matrix.example.com
@@ -120,86 +24,109 @@ _turn._tcp   IN SRV  0 0 3478 turn.example.com.
 _turns._tcp  IN SRV  0 0 5349 turn.example.com.
 ```
 
-### Postgres
+# Setup the whole thing with the provided tools
 
-* Edit **env/postgres.env** and setup the credentials
-  you would like to use for this server instance.
+Note : All the tools should be run from the main folder.  
+Meaning that every **tool** should be called using
+**./tools/tool_name.sh** syntax from a shell.
 
-> The PostgreSQL instance should NOT be accessible
-> from the outside though, unless you understand
-> what you're doing.
+## First configuration
 
-### Final checklist (once you got the SSL certificates)
+In the following examples, you should replace `matrix.yourdomain.com`
+and `turn.yourdomain.com`, by the domain names that will be used to
+reach your Matrix Synapse server and your CoTURN server, respectively.
 
-Let's say that :
+Example :
 
-* your new domain name for your Matrix server is
-  `matrix.mynewchat.com`
-* your new domain name for your TURN server is
-  `turn.mynewchat.com`
+* If your Matrix domain name is : matrix.hamsters.dev
+* If your TURN domain name is : turn.hamsters.dev
 
-* [ ] Fork this repository
-* [ ] Clone it `git clone https://github.com/YourUserName/matrix-coturn-docker-setup --depth 1`
-* [ ] In **static/.well-known/matrix/server** change occurences of
-      `matrix.yourdomain.com` to `matrix.mynewchat.com`
-* [ ] In **docker-compose.yml** change occurences of
-      `matrix.yourdomain.com` to `matrix.mynewchat.com`
-* [ ] In **nginx/conf/nginx.conf** change occurences of
-      `matrix.yourdomain.com` to `matrix.mynewchat.com`
-* [ ] In **haproxy/conf/haproxy.cfg** change occurences of
-      `matrix.yourdomain.com` to `matrix.mynewchat.com`
-* [ ] In **docker-compose.yml** uncomment the following lines,
-      by removing the first `#` character :
-  * [ ] `#- ./ssl/turn.yourdomain.com/fullchain.pem:/etc/ssl/fullchain.pem:ro`
-  * [ ] `#- ./ssl/turn.yourdomain.com/privkey.pem:/etc/ssl/privkey.pem:ro`
-* [ ] In **docker-compose.yml** change occurences of
-      `turn.yourdomain.com` to `turn.mynewchat.com`
-* [ ] In **coturn/conf/turnserver.conf** change occurences of
-      `turn.yourdomain.com` to `turn.mynewchat.com`
-* [ ] In **coturn/conf/turnserver.conf** uncomment the following
-      lines by removing the first `#` character :
-  * [ ] `#cert=/etc/ssl/fullchain.pem`
-  * [ ] `#pkey=/etc/ssl/privkey.pem`
-* [ ] In **docker-compose.yml** edit the following properties,
-      based on your preferences, by modifying the part after
-      the '='. Avoid using quotes in the environment variables :
-  * [ ] `- SYNAPSE_SERVER_NAME=NameOfYourMatrixServer`
-  * [ ] `- SYNAPSE_REPORT_STATS=yes # Can be set to "no"`
-  * [ ] `- SYNAPSE_VOIP_TURN_USERNAME=turn_username`
-  * [ ] `- SYNAPSE_VOIP_TURN_PASSWORD=turn_password`
+Then :
 
-## Run it
+* Replace references to **matrix.yourdomain.com** by **matrix.hamsters.dev**
+* Replace references to **turn.yourdomain.com** by **turn.hamsters.dev**
 
-* From this repo, run :
+### SSL
+
+If you already have SSL certificates, put in them in the
+**ssl/matrix.yourdomain.com** and **ssl/turn.yourdomain.com** and be
+sure to follow this convention :
+
+* `fullchain.pem` is a certificate containing the whole chain
+  of trust.
+* `key.pem` is the private key associated with your certificate.
+
+#### Let's encrypt
+
+If you don't have SSL certificates, you can generate them using
+**tools/letsencrypt-generate.sh**.
+
+##### Same certificate for Matrix and TURN domains
+
+```bash
+./tools/letsencrypt-generate.sh matrix.yourdomain.com turn.yourdomain.com
+```
+
+**OR**
+
+##### One certificate for each domain
+
+```bash
+./tools/letsencrypt-generate.sh matrix.yourdomain.com
+```
+
+```bash
+./tools/letsencrypt-generate.sh turn.yourdomain.com
+```
+
+### Docker, the various services and preconfigure Riot-web
+
+```bash
+./tools/docker-prepare.sh matrix.yourdomain.com turn.yourdomain.com
+```
+
+> You can setup environment variables to control the generation of
+> some configuration parameters :  
+> * POSTGRESQL_PASSWORD controls the password for PostgreSQL  
+> * TURN_USERNAME controls the username used for TURN  
+> * TURN_PASSWORD controls the password used for TURN  
+> Example :  
+> `POSTGRESQL_PASSWORD=W1llBr34kEasily TURN_USERNAME=John TURN_PASSWORD=Piano ./tools/docker-prepare.sh matrix.yourdomain.com turn.yourdomain.com`  
+> You can also only setup the desired variables :  
+> `TURN_USERNAME=John ./tools/docker-prepare.sh matrix.yourdomain.com turn.yourdomain.com`  
+> In such case, the others parameters will be automatically generated.
+
+
+### Install Riot-Web
+
+```bash
+./tools/riot-install.sh
+```
+
+### Start the whole thing
 
 ```bash
 docker-compose up -d
 ```
 
-## Add users
+### Add the missing TURN user
 
-### To your Synapse server
+> This is the only script that is installed in the main folder.
 
-```bash
-docker-compose exec synapse register_new_matrix_user -c /etc/synapse/homeserver.d/registration.yaml -u chat_user -p chat_password -a http://localhost:8008
-```
-
-### To your TURN server
+> This script is generated by **tools/docker-prepare.sh**
 
 ```bash
-docker-compose exec coturn turnadmin -a -b "/srv/coturn/turndb" -u turn_username -p turn_password -r turn.yourdomain.com
+./turn_add_missing_user.sh
 ```
 
-TURN is used to help the users wanting to do direct VOIP
-configure their firewalls, and NAT setup.  
-This remove the complexity of VOIP communications, without
-requiring a middleman server (who could record the entire
-session).
+## Afterwards
 
-> If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
-> the matrix configuration part, the user should be added ASAP,
-> else CoTURN will reject the authentication request and fail
-> VOIP setups.
+### Add users to your chat
+
+```bash
+./tools/synapse_add_user.sh Username Password
+```
+
 
 ## View the logs
 
@@ -319,3 +246,198 @@ Keys generated by Synapse. I have no idea about how this is used.
 Data (avatars, files, ...) of your server :
 
 * **synapse/data**
+
+## Riot-web
+
+The Chat client used to connect to your Chat server.
+
+You can still use https://riot.im client though.
+
+Main configuration file :
+
+* **static/config.json**
+
+Sample configuration file :
+
+* **static/config.sample.json**
+
+# Setup the whole thing manually
+
+Now untested...
+
+## First configuration
+
+Quite a long-ride for a "quick" setup...
+
+### SSL 
+
+If you don't have SSL certificates, generate free Let's Encrypt SSL
+certificates before hand.  
+To do that you can use the method described below.
+
+#### Conventions used in this document
+
+##### Folders
+
+`docker-compose.yml` is currently configured to use
+**ssl/matrix.yourdomain.com/...** for SSL files related to your Matrix
+domain and **ssl/turn.yourdomain.com/...** for SSL files related to
+your TURN domain.  
+The **Checklist** follows this logic.
+
+If you use the same SSL certificates for both TURN and Matrix domains,
+replace these references accordingly in `docker-compose.yml`.
+
+##### Files
+
+* `fullchain.pem` is a certificate containing the whole chain
+of trust.
+* `key.pem` is the private key associated with your certificate.  
+* `complete.pem` is the concatenation of `fullchain.pem` and
+`key.pem`
+
+> If you change any of these filenames, remember to change them
+> in the various configuration files.
+
+#### Generate SSL certificates with Let's Encrypt
+
+##### Prepare ssl/ and start NGINX for ACME challenges
+
+> This is the only time we map NGINX directly to port 80.
+> In the current setup, HAProxy is mapped to port 80 and
+> handle HTTP connections.
+
+```bash
+docker-compose down # Shut down all services for the moment
+mkdir -p ssl # Be sure that ssl/ exist
+docker-compose run -p 80:80 -d nginx # Run only NGINX on port 80 for ACME challenges
+```
+
+##### Generate the certificates the first time
+
+**For Matrix**
+
+```bash
+export SSL_DOMAIN=matrix.yourdomain.com
+docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
+cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
+```
+
+**For TURN**
+
+```bash
+export SSL_DOMAIN=turn.yourdomain.com
+docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest certonly --agree-tos --email yourmail@yourdomain.com --webroot -w /var/lib/letsencrypt -d $SSL_DOMAIN
+cp -rL letsencrypt/live/$SSL_DOMAIN ssl/
+```
+
+##### Shutdown NGINX
+
+```bash
+docker-compose down
+```
+
+#### If you have your own SSL certificates
+
+If you generated SSL certificates yourself, using another
+method :
+
+* [ ] Create the folder **ssl/matrix.mynewchat.com/**
+* [ ] Copy SSL certificates for `matrix.mynewchat.com` to
+      **ssl/matrix.mynewchat.com/**
+* [ ] Create the folder **ssl/turn.mynewchat.com/**
+* [ ] Copy SSL certificates for `turn.mynewchat.com` to
+      **ssl/turn.mynewchat.com**
+
+#### In both cases, generate `complete.pem` for HAProxy
+
+```
+cd ssl/matrix.yourdomain.com
+cat fullchain.pem privkey.pem > complete.pem
+cd -
+```
+
+> If you don't do this now, when starting HAProxy through
+> docker-compose, a folder **ssl/matrix.yourdomain.com/complete.pem**
+> will be created automatically by Docker.  
+> In such case, remove the **ssl/matrix.yourdomain.com/complete.pem**
+> folder, then `cat` the files.
+
+### Postgres
+
+* Edit **env/postgres.env** and setup the credentials
+  you would like to use for this server instance.
+
+> The PostgreSQL instance should NOT be accessible
+> from the outside though, unless you understand
+> what you're doing.
+
+### Final checklist (once you got the SSL certificates)
+
+Let's say that :
+
+* your new domain name for your Matrix server is
+  `matrix.mynewchat.com`
+* your new domain name for your TURN server is
+  `turn.mynewchat.com`
+
+* [ ] Fork this repository
+* [ ] Clone it `git clone https://github.com/YourUserName/matrix-coturn-docker-setup --depth 1`
+* [ ] In **static/.well-known/matrix/server** change occurences of
+      `matrix.yourdomain.com` to `matrix.mynewchat.com`
+* [ ] In **static/config.json** change occurences of
+      `matrix.yourdomain.com` to `matrix.mynewchat.com`
+* [ ] In **docker-compose.yml** change occurences of
+      `matrix.yourdomain.com` to `matrix.mynewchat.com`
+* [ ] In **nginx/conf/nginx.conf** change occurences of
+      `matrix.yourdomain.com` to `matrix.mynewchat.com`
+* [ ] In **haproxy/conf/haproxy.cfg** change occurences of
+      `matrix.yourdomain.com` to `matrix.mynewchat.com`
+* [ ] In **docker-compose.yml** change occurences of
+      `turn.yourdomain.com` to `turn.mynewchat.com`
+* [ ] In **coturn/conf/turnserver.conf** change occurences of
+      `turn.yourdomain.com` to `turn.mynewchat.com`
+* [ ] In **docker-compose.yml** edit the following properties,
+      based on your preferences, by modifying the part after
+      the '='. Avoid using quotes in the environment variables :
+  * [ ] `- SYNAPSE_REPORT_STATS=yes # Can be set to "no"`
+  * [ ] `- SYNAPSE_VOIP_TURN_USERNAME=turn_username`
+  * [ ] `- SYNAPSE_VOIP_TURN_PASSWORD=turn_password`
+* Download a Riot-web release from their webpage
+  https://github.com/vector-im/riot-web/releases
+* Extract the archive and move all the content from **riot-vx.y.z** to
+  **static/**
+
+## Run it
+
+* From this repo, run :
+
+```bash
+docker-compose up -d
+```
+
+## Add users
+
+### To your Synapse server
+
+```bash
+docker-compose exec synapse register_new_matrix_user -c /etc/synapse/homeserver.d/registration.yaml -u chat_user -p chat_password -a http://localhost:8008
+```
+
+### To your TURN server
+
+```bash
+docker-compose exec coturn turnadmin -a -b "/srv/coturn/turndb" -u turn_username -p turn_password -r turn.yourdomain.com
+```
+
+TURN is used to help the users wanting to do direct VOIP
+configure their firewalls, and NAT setup.  
+This remove the complexity of VOIP communications, without
+requiring a middleman server (who could record the entire
+session).
+
+> If `SYNAPSE_VOIP_TURN_USERNAME` is not set to an empty string in
+> the matrix configuration part, the user should be added ASAP,
+> else CoTURN will reject the authentication request and fail
+> VOIP setups.
+

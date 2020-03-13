@@ -13,7 +13,7 @@ print_advice() {
 	echo "docker-compose up"
 }
 
-if [ "$#" < 2 ];
+if [ "$#" -lt 2 ];
 then
 	print_usage
 	exit 1

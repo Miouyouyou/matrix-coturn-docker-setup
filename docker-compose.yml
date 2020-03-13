@@ -63,7 +63,7 @@ services:
     env_file:
       - "./env/postgres.env" # Reuse the PostgreSQL configuration
     environment:
-      - SYNAPSE_SERVER_NAME=YourMatrixServerName
+      - SYNAPSE_SERVER_NAME=matrix.yourdomain.com
       - SYNAPSE_SERVER_ADDRESS=https://matrix.yourdomain.com
       - SYNAPSE_REPORT_STATS=yes # Can be set to "no"
       - SYNAPSE_DATABASE_BACKEND=postgresql # The backend name : postgresql or sqlite
@@ -71,8 +71,8 @@ services:
       # PostgreSQL configuration is inherited from the postgres.env env_file
       # TURN Servers must have URL reachable from the outside
       - SYNAPSE_VOIP_TURN_MAIN_URL=stun:turn.yourdomain.com:5349
-      - SYNAPSE_VOIP_TURN_USERNAME=turn_username
-      - SYNAPSE_VOIP_TURN_PASSWORD=turn_password
+      - SYNAPSE_VOIP_TURN_USERNAME=${turn_username}
+      - SYNAPSE_VOIP_TURN_PASSWORD=${turn_password}
     depends_on:
       - postgresql # For the data
       - coturn     # For the VOIP
