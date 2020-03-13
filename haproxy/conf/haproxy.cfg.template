@@ -40,16 +40,21 @@ frontend entrypoint
         # scripts generally).
         # No sane individual will try to contact your server using
         # your IP directly. They'll use your domain name
-        # (yourdomain.com here).
-        # So we ban EVERY client that doesn't try to contact your
-        # server using your domain name.
-        # A lot of matrix clients are stupid enough to contact your
-        # IP directly (ugh), so we only put this check here.
-        acl valid_domains hdr_dom(Host) -i ${matrix_domain}
+        # (${matrix_domain} here).
+        # So we deny access to EVERY client that contact us using
+        # an IP address in the HTTP "Host:" header, instead of a
+        # domain name.
+        # We also deny access to clients that contact us
+        # using an unknown domain in the HTTP "Host:" header.
+
+        # We also allow requests to ${turn_domain} in order to
+        # serve Let's Encrypt ACME challenges while renewing associated
+        # SSL certificates.
+        acl valid_domains hdr_dom(Host) -i ${matrix_domain} ${turn_domain}
         http-request deny if !valid_domains
 
-        # If someone ask for yourdomain.com/_matrix , redirect him
-        # to the matrix webserver !
+        # If someone ask for ${matrix_domain}/_matrix , redirect him
+        # to Synapse's webserver !
         acl matrix-path path_beg /_matrix
         use_backend matrix if matrix-path
 
