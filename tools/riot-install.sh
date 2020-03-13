@@ -24,7 +24,7 @@ bail_out() {
 	exit $exit_code
 }
 
-curl "$RIOT_URL" -O "$RIOT_ARCHIVE_PATH"
+curl -L "$RIOT_URL" -o "$RIOT_ARCHIVE_PATH"
 
 if [ $? -ne 0 ];
 then
@@ -35,13 +35,15 @@ fi
 
 tar zxvf "$RIOT_ARCHIVE_PATH"
 
+ls
+
 if [ $? -ne 0 ];
 then
 	echo "Could not extract the downloaded Riot-web archive"
 	bail_out $ERROR_CODE_COULD_NOT_EXTRACT_RIOT_TGZ
 fi
 
-mv "$RIOT_ARCHIVE_DIR/*" static/
+mv "$RIOT_ARCHIVE_DIR/"* static/
 
 if [ $? -ne 0 ];
 then
