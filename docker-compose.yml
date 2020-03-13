@@ -70,7 +70,7 @@ services:
       - SYNAPSE_POSTGRES_DBADDR=postgresql # The network alias we provided to our postgresql server
       # PostgreSQL configuration is inherited from the postgres.env env_file
       # TURN Servers must have URL reachable from the outside
-      - SYNAPSE_VOIP_TURN_MAIN_URL=stun:turn.yourdomain.com:5349?transport=udp
+      - SYNAPSE_VOIP_TURN_MAIN_URL=stun:turn.yourdomain.com:5349
       - SYNAPSE_VOIP_TURN_USERNAME=turn_username
       - SYNAPSE_VOIP_TURN_PASSWORD=turn_password
     depends_on:
