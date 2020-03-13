@@ -135,8 +135,14 @@ units at once, or :
 * `docker-compose logs --last=50 -f matrix` to follow Synapse logs
 * `docker-compose logs --last=5 -f coturn` to follow COTURN logs
 * `docker-compose logs -f postgresql` to follow PostgreSQL logs
-* `docker-compose logs -f haproxy` to follow HAProxy logs
 * See files in `nginx/logs` for NGINX logs
+
+HAProxy logs can be read using : `journalctl -t haproxy`
+
+> HAProxy logs are actually routed to **/dev/log** which is read
+> by SystemD `journalctl` on most Linux systems.  
+> If you're not using SystemD, you'll have to know where **/dev/log**
+> is routed (`/var/log/messages` ?).
 
 ## Shut it down
 
