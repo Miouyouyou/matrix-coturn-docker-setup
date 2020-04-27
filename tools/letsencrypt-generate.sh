@@ -50,7 +50,7 @@ bail_out() {
 }
 
 print_usage() {
-	echo "./letsencrypt_generate.sh contact@mail.com domain.com [another.domain.com ...]"
+	echo "$0 contact@mail.com domain.com [another.domain.com ...]"
 }
 
 if [ ! -f $CERTBOT_FILEPATH ];
@@ -65,11 +65,11 @@ then
 	bail_out 1
 fi
 
-if [ -f "letsencrypt/live/$1/fullchain.pem" ];
+if [ -f "letsencrypt/live/$2/fullchain.pem" ];
 then
-	echo "Certificates seem to exist for $1"
+	echo "Certificates seem to exist for $2"
 	echo "If you want to renew certificates, use ./letsencrypt_renew.sh"
-	echo "If you want to regenerate them, move away letsencrypt/live/$1"
+	echo "If you want to regenerate them, move away letsencrypt/live/$2"
 	bail_out 2
 fi
 
