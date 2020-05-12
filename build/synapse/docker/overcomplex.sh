@@ -239,7 +239,7 @@ synapse_configure() {
 synapse_start() {
 	python \
 		-m synapse.app.homeserver \
-		--config-path="$CONFIGURATION_FILEPATH.sample" \
+		--config-path="$CONFIGURATION_FILEPATH" \
 		--config-path="$CONFIGURATION_SPLITDIR" \
 		--data-dir="$DATA_DIR" \
 		$@
