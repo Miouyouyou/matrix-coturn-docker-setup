@@ -159,7 +159,7 @@ docker-compose down
 If you generated the Let's Encrypt SSL certificates using the method
 described in this document, here's how you can renew your certificates.
 
-Execute the following comands while docker-compose is `up` :
+Execute the following commands while docker-compose is `up` :
 
 ```bash
 docker run -v $PWD/letsencrypt:/etc/letsencrypt -v $PWD/static/:/var/lib/letsencrypt certbot/certbot:latest renew
